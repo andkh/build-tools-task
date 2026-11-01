@@ -35,3 +35,37 @@ tasks.withType<KotlinCompile> {
 
 
 // TODO: your code starts here
+
+// Define a task named npmInstall of type Exec that will set the working directory to ui and run the command npm i.
+tasks.register<Exec>("npmInstall") {
+	workingDir(file("ui"))
+	commandLine("npm", "install")
+}
+
+// Define a task named compileUi of type Exec, setting the working directory to ui, and execute npm run build. Ensure this task is dependent on the npmInstall task.
+tasks.register<Exec>("compileUi") {
+	dependsOn("npmInstall")
+	workingDir(file("ui"))
+	commandLine("npm", "run", "build")
+}
+
+// Create a task named copyUi of type Copy that copies ui/dist/index.html, ui/dist/app.js file and ui/dist/css folder into src/main/resources directory. This task should depend on the compileUi task
+tasks.register<Copy>("copyUi") {
+	dependsOn("compileUi")
+	from("ui/dist") {
+		include("index.html", "app.js", "css/**")
+	}
+	into("src/main/resources")
+}
+
+// From previous build we just want to makea install process clear for engine
+tasks.named("processResources") {
+	dependsOn("copyUi")
+}
+
+
+
+// Ensure that all tasks of type org.springframework.boot.gradle.tasks.run.BootRun depend on the copyUi task before executing.
+tasks.withType<org.springframework.boot.gradle.tasks.run.BootRun> {
+	dependsOn("copyUi")
+}
